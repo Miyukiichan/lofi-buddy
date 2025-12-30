@@ -100,6 +100,7 @@ void bringWindowToTop(sf::Window& w) {
 }
 
 #undef None
+#undef Status
 
 bool setShape(sf::Window& w, const sf::Image& image)
 {
@@ -199,11 +200,17 @@ int main()
         {
             if (event->is<sf::Event::Closed>())
                 window.close();
-			if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>())
+			else if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>())
 			{
-				if (mousePressed-> button == sf::Mouse::Button::Right) {
+				if (mousePressed->button == sf::Mouse::Button::Right) {
 					window.close();
 					break;
+				}
+				else if (mousePressed->button == sf::Mouse::Button::Left) {
+					if (music.getStatus() == sf::SoundSource::Status::Paused) 
+						music.play();
+					else 
+						music.pause();
 				}
 			}
         }
