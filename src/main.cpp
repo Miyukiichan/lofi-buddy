@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio/Music.hpp>
 #include <stdio.h>
+#include <vector>
 
 #ifdef SFML_SYSTEM_WINDOWS
 #include <windows.h>
@@ -179,15 +180,42 @@ int main()
     sf::RenderWindow window(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
     window.setPosition(sf::Vector2i(desktop.size.x - winWidth - 100, desktop.size.y - winHeight - 50));
 
-	sf::Image image;
-	if (!image.loadFromFile("test.jpg")) 
-		return -1;
-	setShape(window, image);
 
-	sf::Texture texture;
-	if (!texture.loadFromImage(image))
+	sf::Image headImage;
+	if (!headImage.loadFromFile("head.png")) 
 		return -1;
-	sf::Sprite sprite(texture);
+
+	sf::Texture headTexture;
+	if (!headTexture.loadFromImage(headImage))
+		return -1;
+	sf::Sprite headSprite(headTexture);
+	headSprite.setPosition(sf::Vector2f{0.f, 0.f});
+
+	sf::Image mainImage;
+	if (!mainImage.loadFromFile("test.jpg")) 
+		return -1;
+
+	sf::Texture mainTexture;
+	if (!mainTexture.loadFromImage(mainImage))
+		return -1;
+	sf::Sprite mainSprite(mainTexture);
+	mainSprite.setPosition(sf::Vector2f{0.f, 54.f});
+
+	std::vector<sf::Sprite> sprites;
+	sprites.push_back(mainSprite);
+	sprites.push_back(headSprite);
+
+	sf::RenderTexture rt({winWidth, winHeight});
+	rt.clear(sf::Color::Transparent);
+
+	for (const auto& sprite : sprites)
+		rt.draw(sprite);
+
+	rt.display();
+
+	sf::Image mask = rt.getTexture().copyToImage();
+	setShape(window, mask);
+
 
 	sf::Music music;
 	if (!music.openFromFile("test.mp3"))
@@ -215,7 +243,8 @@ int main()
 			}
         }
 		bringWindowToTop(window);
-		window.draw(sprite);
+		window.draw(mainSprite);
+		window.draw(headSprite);
 		window.display();
     }
 }
