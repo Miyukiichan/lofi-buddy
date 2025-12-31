@@ -11,8 +11,7 @@ void bringWindowToTop(sf::Window& w) {
 	BringWindowToTop(hWnd);
 }
 
-bool setShape(sf::Window& w, const sf::Image& image)
-{
+bool setShape(sf::Window& w, const sf::Image& image) {
 	HWND hWnd = w.getNativeHandle();
 	const sf::Uint8* pixelData = image.getPixelsPtr();
 
@@ -26,18 +25,14 @@ bool setShape(sf::Window& w, const sf::Image& image)
 	// a region for each transparent pixel individually.
 	bool transparentPixelFound = false;
 	unsigned int rectLeft = 0;
-	for (unsigned int y = 0; y < image.getSize().y; y++)
-	{
-		for (unsigned int x = 0; x < image.getSize().x; x++)
-		{
+	for (unsigned int y = 0; y < image.getSize().y; y++) {
+		for (unsigned int x = 0; x < image.getSize().x; x++) {
 			const bool isTransparentPixel = (pixelData[y * image.getSize().x * 4 + x * 4 + 3] == 0);
-			if (isTransparentPixel && !transparentPixelFound)
-			{
+			if (isTransparentPixel && !transparentPixelFound) {
 				transparentPixelFound = true;
 				rectLeft = x;
-			}
-			else if (!isTransparentPixel && transparentPixelFound)
-			{
+			} 
+			else if (!isTransparentPixel && transparentPixelFound) {
 				HRGN hRegionPixel = CreateRectRgn(rectLeft, y, x, y+1);
 				CombineRgn(hRegion, hRegion, hRegionPixel, RGN_XOR);
 				DeleteObject(hRegionPixel);
@@ -45,8 +40,7 @@ bool setShape(sf::Window& w, const sf::Image& image)
 			}
 		}
 
-		if (transparentPixelFound)
-		{
+		if (transparentPixelFound) {
 			HRGN hRegionPixel = CreateRectRgn(rectLeft, y, image.getSize().x, y+1);
 			CombineRgn(hRegion, hRegion, hRegionPixel, RGN_XOR);
 			DeleteObject(hRegionPixel);
@@ -103,16 +97,14 @@ void bringWindowToTop(sf::Window& w) {
 #undef None
 #undef Status
 
-bool setShape(sf::Window& w, const sf::Image& image)
-{
+bool setShape(sf::Window& w, const sf::Image& image) {
 	Window wnd = w.getNativeHandle();
 	Display* display = XOpenDisplay(NULL);
 
 	// Setting the window shape requires the XShape extension
 	int event_base;
 	int error_base;
-	if (!XShapeQueryExtension(display, &event_base, &error_base))
-	{
+	if (!XShapeQueryExtension(display, &event_base, &error_base)) {
 		XCloseDisplay(display);
 		return false;
 	}
@@ -135,25 +127,20 @@ bool setShape(sf::Window& w, const sf::Image& image)
 	XSetForeground(display, gc, 0);
 	bool transparentPixelFound = false;
 	unsigned int rectLeft = 0;
-	for (unsigned int y = 0; y < image.getSize().y; y++)
-	{
-		for (unsigned int x = 0; x < image.getSize().x; x++)
-		{
+	for (unsigned int y = 0; y < image.getSize().y; y++) {
+		for (unsigned int x = 0; x < image.getSize().x; x++) {
 			const bool isTransparentPixel = (pixelData[y * image.getSize().x * 4 + x * 4 + 3] == 0);
-			if (isTransparentPixel && !transparentPixelFound)
-			{
+			if (isTransparentPixel && !transparentPixelFound) {
 				transparentPixelFound = true;
 				rectLeft = x;
 			}
-			else if (!isTransparentPixel && transparentPixelFound)
-			{
+			else if (!isTransparentPixel && transparentPixelFound) {
 				XFillRectangle(display, pixmap, gc, rectLeft, y, x - rectLeft, 1);
 				transparentPixelFound = false;
 			}
 		}
 
-		if (transparentPixelFound)
-		{
+		if (transparentPixelFound) {
 			XFillRectangle(display, pixmap, gc, rectLeft, y, image.getSize().x - rectLeft, 1);
 			transparentPixelFound = false;
 		}
@@ -172,14 +159,12 @@ bool setShape(sf::Window& w, const sf::Image& image)
 }
 #endif
 
-int main()
-{
+int main() {
 	unsigned int winWidth = 500;
 	unsigned int winHeight = 200;
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     sf::RenderWindow window(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
     window.setPosition(sf::Vector2i(desktop.size.x - winWidth - 100, desktop.size.y - winHeight - 50));
-
 
 	sf::Image headImage;
 	if (!headImage.loadFromFile("head.png")) 
@@ -216,29 +201,28 @@ int main()
 	sf::Image mask = rt.getTexture().copyToImage();
 	setShape(window, mask);
 
-
 	sf::Music music;
 	if (!music.openFromFile("test.mp3"))
 		return -1;
 	music.play();
 
-    while (window.isOpen())
-    {
-        while (const std::optional event = window.pollEvent())
-        {
+    while (window.isOpen()) {
+        while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>())
                 window.close();
-			else if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>())
-			{
-				if (mousePressed->button == sf::Mouse::Button::Right) {
-					window.close();
-					break;
-				}
-				else if (mousePressed->button == sf::Mouse::Button::Left) {
-					if (music.getStatus() == sf::SoundSource::Status::Paused) 
-						music.play();
-					else 
-						music.pause();
+			else if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
+				auto mousePos = sf::Mouse::getPosition(window);
+				if (headSprite.getGlobalBounds().contains(sf::Vector2f{static_cast<float>(mousePos.x), static_cast<float>(mousePos.y)})) {
+					if (mousePressed->button == sf::Mouse::Button::Right) {
+						window.close();
+						break;
+					}
+					else if (mousePressed->button == sf::Mouse::Button::Left) {
+						if (music.getStatus() == sf::SoundSource::Status::Paused) 
+							music.play();
+						else 
+							music.pause();
+					}
 				}
 			}
         }
