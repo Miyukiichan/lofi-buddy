@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <vector>
 
+// Taken from https://github.com/texus/TransparentWindows/blob/master/Transparent.cpp
+
 #ifdef SFML_SYSTEM_WINDOWS
 #include <windows.h>
 
