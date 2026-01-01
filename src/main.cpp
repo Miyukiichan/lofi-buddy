@@ -220,8 +220,10 @@ int main() {
 	bool openFileOpen = false;
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
-            if (event->is<sf::Event::Closed>())
-                window.close();
+			if (openFileOpen)
+				continue;
+			if (event->is<sf::Event::Closed>())
+				window.close();
 			else if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
 				auto mousePos = sf::Mouse::getPosition(window);
 				if (headSprite.getGlobalBounds().contains(sf::Vector2f{static_cast<float>(mousePos.x), static_cast<float>(mousePos.y)})) {
@@ -241,17 +243,17 @@ int main() {
 					}
 				}
 			}
-			if (openFileOpen && openFileFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-				auto f = openFileFuture.get();
-				if (f.size() > 0) {
-					auto file = f[0];
-					if (!music.openFromFile(file))
-						auto m = pfd::message("Error", "Error").result();
-					music.play();
-				}
-				openFileOpen = false;
-			}
         }
+		if (openFileOpen && openFileFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+			auto f = openFileFuture.get();
+			if (f.size() > 0) {
+				auto file = f[0];
+				if (!music.openFromFile(file))
+					auto m = pfd::message("Error", "Error").result();
+				music.play();
+			}
+			openFileOpen = false;
+		}
 		// TODO: Only do this if the UI or animation changes to improve performance
 		// Set transparency for anything that is not a sprite
 		sf::RenderTexture rt({winWidth, winHeight});
