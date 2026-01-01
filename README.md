@@ -24,7 +24,9 @@ Desktop buddy pixel art lofi girl music player.
                     - Need to have a sprite or colour for the non-transparent background
         - Playlist manager
             - Add file(s), folder(s) or URL to playlist
+            - Rearrange files in playlist
             - Switch playlist
+            - Save current playlist to m3u8 file
 - Media control
     - Appears on the side of the desk
     - Features
@@ -62,3 +64,4 @@ Desktop buddy pixel art lofi girl music player.
 - Improve performance
     - Trigger transparency only when sprites change (animation)
     - Trigger bringToTop only when window manager does something
+- Possible debug mode that can print information about the current song and state to the console every second

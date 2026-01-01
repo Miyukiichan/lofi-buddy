@@ -211,8 +211,10 @@ int main() {
 	sprites.push_back(deskSprite);
 	sprites.push_back(headSprite);
 
+	std::vector<std::string> tracks = { "test.mp3" };
+	unsigned int trackPos = 0;
 	sf::Music music;
-	if (!music.openFromFile("test.mp3"))
+	if (!music.openFromFile(tracks[trackPos]))
 		return -1;
 	music.play();
 
@@ -247,13 +249,27 @@ int main() {
 		if (openFileOpen && openFileFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
 			auto f = openFileFuture.get();
 			if (f.size() > 0) {
-				auto file = f[0];
-				if (!music.openFromFile(file))
-					auto m = pfd::message("Error", "Error").result();
+				tracks = f;
+				trackPos = 0;
+				auto track = tracks[trackPos];
+				if (!music.openFromFile(track))
+					auto m = pfd::message("Error", "Error playing track: " + track).result();
 				music.play();
 			}
 			openFileOpen = false;
 		}
+		if (music.getStatus() == sf::SoundSource::Status::Stopped) {
+			trackPos++;
+			if (trackPos >= tracks.size()) //Playlist loop by default for now
+				trackPos = 0;
+			auto track = tracks[trackPos];
+			if (!music.openFromFile(track))
+				auto m = pfd::message("Error", "Error playing track: " + track).result();
+			music.play();
+		}
+
+		//printf("%s: %f / %f\n", tracks[trackPos].c_str(), music.getPlayingOffset().asSeconds(), music.getDuration().asSeconds());
+
 		// TODO: Only do this if the UI or animation changes to improve performance
 		// Set transparency for anything that is not a sprite
 		sf::RenderTexture rt({winWidth, winHeight});
