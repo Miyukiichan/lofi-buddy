@@ -160,11 +160,24 @@ bool setShape(sf::Window& w, const sf::Image& image) {
 #endif
 
 int main() {
-	unsigned int winWidth = 323;
-	unsigned int winHeight = 200;
-    sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-    sf::RenderWindow window(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
-    window.setPosition(sf::Vector2i(desktop.size.x - winWidth - 100, desktop.size.y - winHeight - 50));
+	const unsigned int deskHeight = 146;
+	const unsigned int deskWidth = 323;
+	const unsigned int headWidth = 32;
+	const unsigned int headHeight = 32;
+	const unsigned int headVMargin = 10;
+	const unsigned int menuButtonHeight = 32;
+	const unsigned int menuButtonWidth = 128;
+	const unsigned int menuButtonCount = 3; //quit, addFiles, settings
+	const unsigned int menuButtonVMargin = 10;
+	const unsigned int winVMargin = 100;
+	const unsigned int winHMargin = 50;
+	unsigned int menuHeight = (menuButtonHeight + (menuButtonVMargin * 2)) * menuButtonCount;
+	unsigned int winWidth = deskWidth;
+	unsigned int winHeight = deskHeight + headHeight + (headVMargin * 2) + menuHeight;
+	sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+	sf::RenderWindow window(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
+	window.setPosition(sf::Vector2i(desktop.size.x - winWidth - winVMargin, desktop.size.y - winHeight - winHMargin));
+	window.setFramerateLimit(30);
 
 	sf::Image headImage;
 	if (!headImage.loadFromFile("head.png")) 
@@ -174,34 +187,25 @@ int main() {
 	if (!headTexture.loadFromImage(headImage))
 		return -1;
 	sf::Sprite headSprite(headTexture);
-	float headX = winWidth - 32;
-	headSprite.setPosition(sf::Vector2f{headX, 0.f});
+	float headX = winWidth - headWidth;
+	float headY = winHeight - headHeight - deskHeight - headVMargin;
+	headSprite.setPosition(sf::Vector2f{headX, headY});
 
-	sf::Image mainImage;
-	if (!mainImage.loadFromFile("test.jpg")) 
+	sf::Image deskImage;
+	if (!deskImage.loadFromFile("test.jpg")) 
 		return -1;
 
-	sf::Texture mainTexture;
-	if (!mainTexture.loadFromImage(mainImage))
+	sf::Texture deskTexture;
+	if (!deskTexture.loadFromImage(deskImage))
 		return -1;
-	sf::Sprite mainSprite(mainTexture);
-	float mainX = winWidth - 323;
-	mainSprite.setPosition(sf::Vector2f{mainX, 54.f});
+	sf::Sprite deskSprite(deskTexture);
+	float deskX = winWidth - deskWidth;
+	float deskY = winHeight - deskHeight;
+	deskSprite.setPosition(sf::Vector2f{deskX, deskY});
 
 	std::vector<sf::Sprite> sprites;
-	sprites.push_back(mainSprite);
+	sprites.push_back(deskSprite);
 	sprites.push_back(headSprite);
-
-	sf::RenderTexture rt({winWidth, winHeight});
-	rt.clear(sf::Color::Transparent);
-
-	for (const auto& sprite : sprites)
-		rt.draw(sprite);
-
-	rt.display();
-
-	sf::Image mask = rt.getTexture().copyToImage();
-	setShape(window, mask);
 
 	sf::Music music;
 	if (!music.openFromFile("test.mp3"))
@@ -228,8 +232,18 @@ int main() {
 				}
 			}
         }
-		bringWindowToTop(window);
-		window.draw(mainSprite);
+		// TODO: Only do this if the UI or animation changes to improve performance
+		// Set transparency for anything that is not a sprite
+		sf::RenderTexture rt({winWidth, winHeight});
+		rt.clear(sf::Color::Transparent);
+		for (const auto& sprite : sprites)
+			rt.draw(sprite);
+		rt.display();
+		sf::Image mask = rt.getTexture().copyToImage();
+		setShape(window, mask);
+
+		bringWindowToTop(window); // TODO: Only do this if I need to to improve performance
+		window.draw(deskSprite);
 		window.draw(headSprite);
 		window.display();
     }
