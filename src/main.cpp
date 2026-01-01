@@ -2,6 +2,7 @@
 #include <SFML/Audio/Music.hpp>
 #include <stdio.h>
 #include <vector>
+#include "../lib/portable-file-dialogs.h"
 
 // Taken from https://github.com/texus/TransparentWindows/blob/master/Transparent.cpp
 
@@ -222,8 +223,10 @@ int main() {
 				auto mousePos = sf::Mouse::getPosition(window);
 				if (headSprite.getGlobalBounds().contains(sf::Vector2f{static_cast<float>(mousePos.x), static_cast<float>(mousePos.y)})) {
 					if (mousePressed->button == sf::Mouse::Button::Right) {
-						window.close();
-						break;
+						//window.close();
+						//break;
+						auto m = pfd::message("Hello", "This is a test").result();
+						printf("%d\n", m);
 					}
 					else if (mousePressed->button == sf::Mouse::Button::Left) {
 						if (music.getStatus() == sf::SoundSource::Status::Paused) 
