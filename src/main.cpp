@@ -160,7 +160,7 @@ bool setShape(sf::Window& w, const sf::Image& image) {
 #endif
 
 int main() {
-	unsigned int winWidth = 500;
+	unsigned int winWidth = 323;
 	unsigned int winHeight = 200;
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     sf::RenderWindow window(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
@@ -174,7 +174,8 @@ int main() {
 	if (!headTexture.loadFromImage(headImage))
 		return -1;
 	sf::Sprite headSprite(headTexture);
-	headSprite.setPosition(sf::Vector2f{0.f, 0.f});
+	float headX = winWidth - 32;
+	headSprite.setPosition(sf::Vector2f{headX, 0.f});
 
 	sf::Image mainImage;
 	if (!mainImage.loadFromFile("test.jpg")) 
@@ -184,7 +185,8 @@ int main() {
 	if (!mainTexture.loadFromImage(mainImage))
 		return -1;
 	sf::Sprite mainSprite(mainTexture);
-	mainSprite.setPosition(sf::Vector2f{0.f, 54.f});
+	float mainX = winWidth - 323;
+	mainSprite.setPosition(sf::Vector2f{mainX, 54.f});
 
 	std::vector<sf::Sprite> sprites;
 	sprites.push_back(mainSprite);
