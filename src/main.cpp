@@ -2,6 +2,7 @@
 #include <SFML/Audio/Music.hpp>
 #include <stdio.h>
 #include <vector>
+#include <future>
 #include "../lib/portable-file-dialogs.h"
 
 // Taken from https://github.com/texus/TransparentWindows/blob/master/Transparent.cpp
@@ -215,6 +216,8 @@ int main() {
 		return -1;
 	music.play();
 
+	std::future<std::vector<std::string>> openFileFuture;
+	bool openFileOpen = false;
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>())
@@ -225,8 +228,10 @@ int main() {
 					if (mousePressed->button == sf::Mouse::Button::Right) {
 						//window.close();
 						//break;
-						auto m = pfd::message("Hello", "This is a test").result();
-						printf("%d\n", m);
+						if (!openFileOpen) {
+							openFileFuture = std::async(std::launch::async, [] () { return pfd::open_file("Select music", ".", { "All Files" , "*" }, pfd::opt::multiselect).result();});
+							openFileOpen = true;
+						}
 					}
 					else if (mousePressed->button == sf::Mouse::Button::Left) {
 						if (music.getStatus() == sf::SoundSource::Status::Paused) 
@@ -235,6 +240,16 @@ int main() {
 							music.pause();
 					}
 				}
+			}
+			if (openFileOpen && openFileFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+				auto f = openFileFuture.get();
+				if (f.size() > 0) {
+					auto file = f[0];
+					if (!music.openFromFile(file))
+						auto m = pfd::message("Error", "Error").result();
+					music.play();
+				}
+				openFileOpen = false;
 			}
         }
 		// TODO: Only do this if the UI or animation changes to improve performance
