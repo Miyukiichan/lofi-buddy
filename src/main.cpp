@@ -183,29 +183,31 @@ int main() {
 	window.setPosition(sf::Vector2i(desktop.size.x - winWidth - winVMargin, desktop.size.y - winHeight - winHMargin));
 	window.setFramerateLimit(30);
 
-	sf::Image headImage;
-	if (!headImage.loadFromFile("head.png")) 
-		return -1;
-
 	sf::Texture headTexture;
-	if (!headTexture.loadFromImage(headImage))
+	if (!headTexture.loadFromFile("head.png"))
 		return -1;
 	sf::Sprite headSprite(headTexture);
 	float headX = winWidth - headWidth;
 	float headY = winHeight - headHeight - deskHeight - headVMargin;
 	headSprite.setPosition(sf::Vector2f{headX, headY});
 
-	sf::Image deskImage;
-	if (!deskImage.loadFromFile("test.jpg")) 
-		return -1;
-
 	sf::Texture deskTexture;
-	if (!deskTexture.loadFromImage(deskImage))
+	if (!deskTexture.loadFromFile("test.jpg"))
 		return -1;
 	sf::Sprite deskSprite(deskTexture);
 	float deskX = winWidth - deskWidth;
 	float deskY = winHeight - deskHeight;
 	deskSprite.setPosition(sf::Vector2f{deskX, deskY});
+
+	std::vector<sf::Sprite> menuButtonSprites;
+	sf::Texture menuButtonTexture;
+	if (!menuButtonTexture.loadFromFile("menu-button.png"))
+		return -1;
+	for (int i = 0; i < menuButtonCount; i++) {
+		sf::Sprite s(menuButtonTexture);
+		s.setPosition(sf::Vector2f{ winWidth - menuButtonWidth, i * (menuButtonHeight + menuButtonVMargin) });
+		menuButtonSprites.push_back(s);
+	}
 
 	std::vector<sf::Sprite> sprites;
 	sprites.push_back(deskSprite);
@@ -220,6 +222,8 @@ int main() {
 
 	std::future<std::vector<std::string>> openFileFuture;
 	bool openFileOpen = false;
+	bool menuOpen = false;
+
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
 			if (openFileOpen)
@@ -238,10 +242,11 @@ int main() {
 						}
 					}
 					else if (mousePressed->button == sf::Mouse::Button::Left) {
-						if (music.getStatus() == sf::SoundSource::Status::Paused) 
-							music.play();
-						else 
-							music.pause();
+						// if (music.getStatus() == sf::SoundSource::Status::Paused) 
+						// 	music.play();
+						// else 
+						// 	music.pause();
+						menuOpen = !menuOpen;
 					}
 				}
 			}
@@ -276,13 +281,21 @@ int main() {
 		rt.clear(sf::Color::Transparent);
 		for (const auto& sprite : sprites)
 			rt.draw(sprite);
+		if (menuOpen)
+			for (const auto& sprite : menuButtonSprites)
+				rt.draw(sprite);
 		rt.display();
 		sf::Image mask = rt.getTexture().copyToImage();
 		setShape(window, mask);
 
 		bringWindowToTop(window); // TODO: Only do this if I need to to improve performance
-		window.draw(deskSprite);
-		window.draw(headSprite);
+		for (auto s : sprites)
+			window.draw(s);
+		if (menuOpen)
+			for (auto s : menuButtonSprites)
+				window.draw(s);
+		// window.draw(deskSprite);
+		// window.draw(headSprite);
 		window.display();
     }
 }
