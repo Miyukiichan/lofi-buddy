@@ -163,7 +163,35 @@ bool setShape(sf::Window& w, const sf::Image& image) {
 }
 #endif
 
+
+class GraphicsManager {
+public:
+    static sf::Texture* getTexture(const std::string& path) {
+        static std::map<std::string, sf::Texture*> textureCache;
+        auto texture = textureCache[path];
+		if (texture == NULL)
+			texture = new sf::Texture();
+        if (!texture->loadFromFile(path))
+			return NULL;
+        return texture;
+    }
+
+    static sf::Sprite* createSprite(const std::string& path, float x, float y) {
+        sf::Sprite* sprite = new sf::Sprite(*getTexture(path));
+		if (sprite == NULL)
+			return NULL;
+        sprite->setPosition(sf::Vector2f{x, y});
+        return sprite;
+    }
+};
+
 int main() {
+	// Menu buttons
+	const unsigned int BTN_QUIT = 0;
+	const unsigned int BTN_SETTINGS = 1;
+	const unsigned int BTN_PLAYLIST = 2;
+
+	// Dimensions
 	const unsigned int deskHeight = 146;
 	const unsigned int deskWidth = 323;
 	const unsigned int headWidth = 32;
@@ -178,61 +206,61 @@ int main() {
 	unsigned int menuHeight = (menuButtonHeight + (menuButtonVMargin * 2)) * menuButtonCount;
 	unsigned int winWidth = deskWidth;
 	unsigned int winHeight = deskHeight + headHeight + (headVMargin * 2) + menuHeight;
+
+	// Window init
 	sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
 	sf::RenderWindow window(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
 	window.setPosition(sf::Vector2i(desktop.size.x - winWidth - winVMargin, desktop.size.y - winHeight - winHMargin));
 	window.setFramerateLimit(30);
 
-	sf::Texture headTexture;
-	if (!headTexture.loadFromFile("head.png"))
-		return -1;
-	sf::Sprite headSprite(headTexture);
+	// Head and desk textures
 	float headX = winWidth - headWidth;
 	float headY = winHeight - headHeight - deskHeight - headVMargin;
-	headSprite.setPosition(sf::Vector2f{headX, headY});
-
-	sf::Texture deskTexture;
-	if (!deskTexture.loadFromFile("test.jpg"))
+	auto headSprite = GraphicsManager::createSprite("head.png", headX, headY);
+	if (headSprite == NULL)
 		return -1;
-	sf::Sprite deskSprite(deskTexture);
 	float deskX = winWidth - deskWidth;
 	float deskY = winHeight - deskHeight;
-	deskSprite.setPosition(sf::Vector2f{deskX, deskY});
-
-	std::vector<sf::Sprite> menuButtonSprites;
-	sf::Texture menuButtonTexture;
-	if (!menuButtonTexture.loadFromFile("menu-button.png"))
+	auto deskSprite = GraphicsManager::createSprite("test.jpg", deskX, deskY);
+	if (deskSprite == NULL)
 		return -1;
+
+	// Menu entry buttons
+	std::vector<sf::Sprite*> menuButtonSprites;
 	for (int i = 0; i < menuButtonCount; i++) {
-		sf::Sprite s(menuButtonTexture);
-		s.setPosition(sf::Vector2f{ winWidth - menuButtonWidth, i * (menuButtonHeight + menuButtonVMargin) });
+		auto s = GraphicsManager::createSprite("menu-button.png", winWidth - menuButtonWidth, i * (menuButtonHeight + menuButtonVMargin));
+		if (s == NULL)
+			return -1;
 		menuButtonSprites.push_back(s);
 	}
 
-	std::vector<sf::Sprite> sprites;
+	// Collect main sprites that are always visible
+	std::vector<sf::Sprite*> sprites;
 	sprites.push_back(deskSprite);
 	sprites.push_back(headSprite);
 
+	// Initialise default music track
 	std::vector<std::string> tracks = { "test.mp3" };
-	unsigned int trackPos = 0;
+	unsigned int trackIndex = 0;
 	sf::Music music;
-	if (!music.openFromFile(tracks[trackPos]))
+	if (!music.openFromFile(tracks[trackIndex]))
 		return -1;
 	music.play();
 
+	// Global UI state
 	std::future<std::vector<std::string>> openFileFuture;
 	bool openFileOpen = false;
 	bool menuOpen = false;
 
+	// Main loop
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
+			// Emulate a modal dialog where we cannot interact with the main program
 			if (openFileOpen)
 				continue;
-			if (event->is<sf::Event::Closed>())
-				window.close();
-			else if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
+			if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
 				auto mousePos = sf::Mouse::getPosition(window);
-				if (headSprite.getGlobalBounds().contains(sf::Vector2f{static_cast<float>(mousePos.x), static_cast<float>(mousePos.y)})) {
+				if (headSprite->getGlobalBounds().contains(sf::Vector2f{static_cast<float>(mousePos.x), static_cast<float>(mousePos.y)})) {
 					if (mousePressed->button == sf::Mouse::Button::Right) {
 						//window.close();
 						//break;
@@ -251,51 +279,53 @@ int main() {
 				}
 			}
         }
+		// Handle async file dialog closing
 		if (openFileOpen && openFileFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
 			auto f = openFileFuture.get();
 			if (f.size() > 0) {
 				tracks = f;
-				trackPos = 0;
-				auto track = tracks[trackPos];
+				trackIndex = 0;
+				auto track = tracks[trackIndex];
 				if (!music.openFromFile(track))
 					auto m = pfd::message("Error", "Error playing track: " + track).result();
 				music.play();
 			}
 			openFileOpen = false;
 		}
+		
+		// Automatically advance to the next track when it gets to the end
 		if (music.getStatus() == sf::SoundSource::Status::Stopped) {
-			trackPos++;
-			if (trackPos >= tracks.size()) //Playlist loop by default for now
-				trackPos = 0;
-			auto track = tracks[trackPos];
+			trackIndex++;
+			if (trackIndex >= tracks.size()) //Playlist loop by default for now
+				trackIndex = 0;
+			auto track = tracks[trackIndex];
 			if (!music.openFromFile(track))
 				auto m = pfd::message("Error", "Error playing track: " + track).result();
 			music.play();
 		}
 
-		//printf("%s: %f / %f\n", tracks[trackPos].c_str(), music.getPlayingOffset().asSeconds(), music.getDuration().asSeconds());
+		//printf("%s: %f / %f\n", tracks[trackIndex].c_str(), music.getPlayingOffset().asSeconds(), music.getDuration().asSeconds());
 
 		// TODO: Only do this if the UI or animation changes to improve performance
 		// Set transparency for anything that is not a sprite
 		sf::RenderTexture rt({winWidth, winHeight});
 		rt.clear(sf::Color::Transparent);
-		for (const auto& sprite : sprites)
-			rt.draw(sprite);
+		for (const auto sprite : sprites)
+			rt.draw(*sprite);
 		if (menuOpen)
-			for (const auto& sprite : menuButtonSprites)
-				rt.draw(sprite);
+			for (const auto sprite : menuButtonSprites)
+				rt.draw(*sprite);
 		rt.display();
 		sf::Image mask = rt.getTexture().copyToImage();
 		setShape(window, mask);
 
+		// Drawing all the sprites
 		bringWindowToTop(window); // TODO: Only do this if I need to to improve performance
 		for (auto s : sprites)
-			window.draw(s);
+			window.draw(*s);
 		if (menuOpen)
 			for (auto s : menuButtonSprites)
-				window.draw(s);
-		// window.draw(deskSprite);
-		// window.draw(headSprite);
+				window.draw(*s);
 		window.display();
     }
 }
