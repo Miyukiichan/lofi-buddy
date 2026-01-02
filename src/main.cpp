@@ -176,11 +176,13 @@ public:
         return texture;
     }
 
-    static sf::Sprite* createSprite(const std::string& path, float x, float y) {
+    static sf::Sprite* createSprite(const std::string& path, float x, float y, int width = 0, int height = 0) {
         sf::Sprite* sprite = new sf::Sprite(*getTexture(path));
 		if (sprite == NULL)
 			return NULL;
         sprite->setPosition(sf::Vector2f{x, y});
+		if (width > 0 && height > 0)
+			sprite->setTextureRect(sf::IntRect(sf::Vector2i{0, 0}, sf::Vector2i{width, height}));
         return sprite;
     }
 };
@@ -201,11 +203,13 @@ int main() {
 	const unsigned int menuButtonWidth = 128;
 	const unsigned int menuButtonCount = 3;
 	const unsigned int menuButtonVMargin = 10;
+	const unsigned int menuPadding = 5;
 	const unsigned int winVMargin = 100;
 	const unsigned int winHMargin = 50;
-	unsigned int menuHeight = (menuButtonHeight + menuButtonVMargin) * menuButtonCount;
+	unsigned int menuHeight = ((menuButtonHeight + menuButtonVMargin) * menuButtonCount) + (menuPadding * 2) - menuButtonVMargin;
+	unsigned int menuWidth = menuButtonWidth + (menuPadding * 2);
 	unsigned int winWidth = deskWidth;
-	unsigned int winHeight = deskHeight + headHeight + headVMargin + menuHeight;
+	unsigned int winHeight = deskHeight + headHeight + (headVMargin * 2) + menuHeight;
 
 	// Window init
 	sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
@@ -230,12 +234,15 @@ int main() {
 	if (deskSprite == NULL)
 		return -1;
 
+	auto menuSprite = GraphicsManager::createSprite("menu.png", winWidth - menuWidth, 0, menuWidth, menuHeight);
+	if (menuSprite == NULL)
+		return -1;
 	// Menu entry buttons
 	std::vector<sf::Sprite*> menuButtonSprites;
 	std::vector<sf::Text*> menuButtonLabels;
 	for (int i = 0; i < menuButtonCount; i++) {
-		float mbX = winWidth - menuButtonWidth;
-		float mbY = i * (menuButtonHeight + menuButtonVMargin);
+		float mbX = winWidth - menuButtonWidth - menuPadding;
+		float mbY = (i * (menuButtonHeight + menuButtonVMargin)) + menuPadding;
 		auto s = GraphicsManager::createSprite("menu-button.png", mbX, mbY);
 		if (s == NULL)
 			return -1;
@@ -258,7 +265,7 @@ int main() {
 		l->setString(t);
 		l->setCharacterSize(24);
 		l->setFillColor(sf::Color::Black);
-		l->setPosition(sf::Vector2f{ mbX + 2, mbY });
+		l->setPosition(sf::Vector2f{ mbX + 3, mbY });
 		menuButtonLabels.push_back(l);
 	}
 
@@ -274,6 +281,7 @@ int main() {
 	if (!music.openFromFile(tracks[trackIndex]))
 		return -1;
 	music.play();
+	music.pause();
 
 	// Global UI state
 	std::future<std::vector<std::string>> openFileFuture;
@@ -359,10 +367,9 @@ int main() {
 		rt.clear(sf::Color::Transparent);
 		for (const auto sprite : sprites)
 			rt.draw(*sprite);
-		// Don't need to do this for the text sprites on the menu buttons since the shape of those are inside the buttons
+		// Just include the outer menu background
 		if (menuOpen)
-			for (const auto sprite : menuButtonSprites)
-				rt.draw(*sprite);
+			rt.draw(*menuSprite);
 		rt.display();
 		sf::Image mask = rt.getTexture().copyToImage();
 		setShape(window, mask);
@@ -372,6 +379,7 @@ int main() {
 		for (auto s : sprites)
 			window.draw(*s);
 		if (menuOpen) {
+			window.draw(*menuSprite);
 			for (auto s : menuButtonSprites)
 				window.draw(*s);
 			for (auto l : menuButtonLabels)
