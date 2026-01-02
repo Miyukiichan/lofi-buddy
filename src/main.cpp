@@ -203,9 +203,9 @@ int main() {
 	const unsigned int menuButtonVMargin = 10;
 	const unsigned int winVMargin = 100;
 	const unsigned int winHMargin = 50;
-	unsigned int menuHeight = (menuButtonHeight + (menuButtonVMargin * 2)) * menuButtonCount;
+	unsigned int menuHeight = (menuButtonHeight + menuButtonVMargin) * menuButtonCount;
 	unsigned int winWidth = deskWidth;
-	unsigned int winHeight = deskHeight + headHeight + (headVMargin * 2) + menuHeight;
+	unsigned int winHeight = deskHeight + headHeight + headVMargin + menuHeight;
 
 	// Window init
 	sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
@@ -288,21 +288,40 @@ int main() {
 				continue;
 			if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
 				auto mousePos = sf::Mouse::getPosition(window);
-				if (headSprite->getGlobalBounds().contains(sf::Vector2f{static_cast<float>(mousePos.x), static_cast<float>(mousePos.y)})) {
+				auto mousePosVector = sf::Vector2f{static_cast<float>(mousePos.x), static_cast<float>(mousePos.y)};
+				if (headSprite->getGlobalBounds().contains(mousePosVector)) {
 					if (mousePressed->button == sf::Mouse::Button::Right) {
-						//window.close();
-						//break;
-						if (!openFileOpen) {
-							openFileFuture = std::async(std::launch::async, [] () { return pfd::open_file("Select music", ".", { "All Files" , "*" }, pfd::opt::multiselect).result();});
-							openFileOpen = true;
-						}
+						menuOpen = !menuOpen;
 					}
 					else if (mousePressed->button == sf::Mouse::Button::Left) {
-						// if (music.getStatus() == sf::SoundSource::Status::Paused) 
-						// 	music.play();
-						// else 
-						// 	music.pause();
-						menuOpen = !menuOpen;
+						if (music.getStatus() == sf::SoundSource::Status::Paused) 
+							music.play();
+						else 
+							music.pause();
+					}
+				}
+				// Check menu button sprites
+				else if (mousePressed->button == sf::Mouse::Button::Left) {
+					for (int i = 0; i < menuButtonSprites.size(); i++) {
+						auto mbs = menuButtonSprites[i];
+						if (!mbs->getGlobalBounds().contains(mousePosVector))
+							continue;
+						switch(i) {
+							case BTN_PLAYLIST:
+								// TODO: File filter for audio files
+								if (!openFileOpen) {
+									openFileFuture = std::async(std::launch::async, [] () { return pfd::open_file("Select music", ".", { "All Files" , "*" }, pfd::opt::multiselect).result();});
+									openFileOpen = true;
+									menuOpen = false;
+								}
+								break;
+							case BTN_SETTINGS:
+								break;
+							case BTN_QUIT:
+								window.close();
+								break;
+						}
+						break;
 					}
 				}
 			}
