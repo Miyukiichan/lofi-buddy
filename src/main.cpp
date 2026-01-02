@@ -187,9 +187,9 @@ public:
 
 int main() {
 	// Menu buttons
-	const unsigned int BTN_QUIT = 0;
+	const unsigned int BTN_PLAYLIST = 0;
 	const unsigned int BTN_SETTINGS = 1;
-	const unsigned int BTN_PLAYLIST = 2;
+	const unsigned int BTN_QUIT = 2;
 
 	// Dimensions
 	const unsigned int deskHeight = 146;
@@ -199,7 +199,7 @@ int main() {
 	const unsigned int headVMargin = 10;
 	const unsigned int menuButtonHeight = 32;
 	const unsigned int menuButtonWidth = 128;
-	const unsigned int menuButtonCount = 3; //quit, addFiles, settings
+	const unsigned int menuButtonCount = 3;
 	const unsigned int menuButtonVMargin = 10;
 	const unsigned int winVMargin = 100;
 	const unsigned int winHMargin = 50;
@@ -212,6 +212,11 @@ int main() {
 	sf::RenderWindow window(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
 	window.setPosition(sf::Vector2i(desktop.size.x - winWidth - winVMargin, desktop.size.y - winHeight - winHMargin));
 	window.setFramerateLimit(30);
+
+	// Font init
+	sf::Font font;
+	if (!font.openFromFile("BoldPixels.otf"))
+		return -1;
 
 	// Head and desk textures
 	float headX = winWidth - headWidth;
@@ -227,11 +232,34 @@ int main() {
 
 	// Menu entry buttons
 	std::vector<sf::Sprite*> menuButtonSprites;
+	std::vector<sf::Text*> menuButtonLabels;
 	for (int i = 0; i < menuButtonCount; i++) {
-		auto s = GraphicsManager::createSprite("menu-button.png", winWidth - menuButtonWidth, i * (menuButtonHeight + menuButtonVMargin));
+		float mbX = winWidth - menuButtonWidth;
+		float mbY = i * (menuButtonHeight + menuButtonVMargin);
+		auto s = GraphicsManager::createSprite("menu-button.png", mbX, mbY);
 		if (s == NULL)
 			return -1;
 		menuButtonSprites.push_back(s);
+
+		// Labels
+		std::string t = "";
+		switch(i) {
+			case BTN_PLAYLIST:
+				t = "Playlist";
+				break;
+			case BTN_SETTINGS:
+				t = "Settings";
+				break;
+			case BTN_QUIT:
+				t = "Quit";
+				break;
+		}
+		sf::Text* l = new sf::Text(font);
+		l->setString(t);
+		l->setCharacterSize(24);
+		l->setFillColor(sf::Color::Black);
+		l->setPosition(sf::Vector2f{ mbX + 2, mbY });
+		menuButtonLabels.push_back(l);
 	}
 
 	// Collect main sprites that are always visible
@@ -312,6 +340,7 @@ int main() {
 		rt.clear(sf::Color::Transparent);
 		for (const auto sprite : sprites)
 			rt.draw(*sprite);
+		// Don't need to do this for the text sprites on the menu buttons since the shape of those are inside the buttons
 		if (menuOpen)
 			for (const auto sprite : menuButtonSprites)
 				rt.draw(*sprite);
@@ -323,9 +352,12 @@ int main() {
 		bringWindowToTop(window); // TODO: Only do this if I need to to improve performance
 		for (auto s : sprites)
 			window.draw(*s);
-		if (menuOpen)
+		if (menuOpen) {
 			for (auto s : menuButtonSprites)
 				window.draw(*s);
+			for (auto l : menuButtonLabels)
+				window.draw(*l);
+		}
 		window.display();
     }
 }
