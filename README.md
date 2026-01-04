@@ -9,9 +9,9 @@ Desktop buddy pixel art lofi girl music player.
 ### Features
 
 - [ ] Playlist integration
-    - Playlist dir that stores m3u8 files
-        - Can import m3u8 files
-- Menu system
+    - [ ] Playlist dir that stores m3u8 files
+        - [ ] Can import m3u8 files
+- [ ] Menu system
     - [X] Click on girl's head, she looks up and sees the menu items above her head
         - Basically done beside the art and animation
     - [X] Background
@@ -39,6 +39,11 @@ Desktop buddy pixel art lofi girl music player.
         - [ ] Mute
         - [ ] Volume
         - [ ] Progress??
+- [ ] Background ambient noise
+    - [ ] Fireplace
+    - [ ] Wind
+    - [ ] Rain
+    - [ ] Snow
 
 ### Implementation
 
