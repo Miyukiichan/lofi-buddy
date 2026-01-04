@@ -169,7 +169,7 @@ public:
     static sf::Texture* getTexture(const std::string& path) {
         static std::map<std::string, sf::Texture*> textureCache;
         auto texture = textureCache[path];
-		if (texture == NULL)
+		if (!texture)
 			texture = new sf::Texture();
         if (!texture->loadFromFile(path))
 			return NULL;
@@ -204,17 +204,23 @@ int main() {
 	const unsigned int menuButtonCount = 3;
 	const unsigned int menuButtonVMargin = 10;
 	const unsigned int menuPadding = 5;
-	const unsigned int winVMargin = 100;
+	const unsigned int winVMargin = 50;
 	const unsigned int winHMargin = 50;
+	const unsigned int settingsWidth = 400;
+	const unsigned int settingsHeight = 400;
 	unsigned int menuHeight = ((menuButtonHeight + menuButtonVMargin) * menuButtonCount) + (menuPadding * 2) - menuButtonVMargin;
 	unsigned int menuWidth = menuButtonWidth + (menuPadding * 2);
 	unsigned int winWidth = deskWidth;
 	unsigned int winHeight = deskHeight + headHeight + (headVMargin * 2) + menuHeight;
+	sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+	int winX = desktop.size.x - winWidth - winHMargin;
+	int winY = desktop.size.y - winHeight - winVMargin;
+	int settingsX = desktop.size.x - settingsWidth - winHMargin;
+	int settingsY = winY - settingsHeight + menuHeight;
 
 	// Window init
-	sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
 	sf::RenderWindow window(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
-	window.setPosition(sf::Vector2i(desktop.size.x - winWidth - winVMargin, desktop.size.y - winHeight - winHMargin));
+	window.setPosition(sf::Vector2i(winX, winY));
 	window.setFramerateLimit(30);
 
 	// Font init
@@ -226,16 +232,16 @@ int main() {
 	float headX = winWidth - headWidth;
 	float headY = winHeight - headHeight - deskHeight - headVMargin;
 	auto headSprite = GraphicsManager::createSprite("head.png", headX, headY);
-	if (headSprite == NULL)
+	if (!headSprite)
 		return -1;
 	float deskX = winWidth - deskWidth;
 	float deskY = winHeight - deskHeight;
 	auto deskSprite = GraphicsManager::createSprite("test.jpg", deskX, deskY);
-	if (deskSprite == NULL)
+	if (!deskSprite)
 		return -1;
 
 	auto menuSprite = GraphicsManager::createSprite("menu.png", winWidth - menuWidth, 0, menuWidth, menuHeight);
-	if (menuSprite == NULL)
+	if (!menuSprite)
 		return -1;
 	// Menu entry buttons
 	std::vector<sf::Sprite*> menuButtonSprites;
@@ -244,7 +250,7 @@ int main() {
 		float mbX = winWidth - menuButtonWidth - menuPadding;
 		float mbY = (i * (menuButtonHeight + menuButtonVMargin)) + menuPadding;
 		auto s = GraphicsManager::createSprite("menu-button.png", mbX, mbY);
-		if (s == NULL)
+		if (!s)
 			return -1;
 		menuButtonSprites.push_back(s);
 
@@ -268,6 +274,11 @@ int main() {
 		l->setPosition(sf::Vector2f{ mbX + 3, mbY });
 		menuButtonLabels.push_back(l);
 	}
+
+	// Settings menu sprites
+	auto settingsBackgroundSprite = GraphicsManager::createSprite("menu.png", 0, 0);
+	if (!settingsBackgroundSprite)
+		return -1;
 
 	// Collect main sprites that are always visible
 	std::vector<sf::Sprite*> sprites;
@@ -294,10 +305,9 @@ int main() {
 		if (settingsWindow && settingsWindow->isOpen()) {
 			// check all the window's events that were triggered since the last iteration of the loop
 			while (const std::optional event = settingsWindow->pollEvent()) {
-				// "close requested" event: we close the window
-				if (event->is<sf::Event::Closed>())
-					settingsWindow->close();
 			}
+			bringWindowToTop(*settingsWindow); // TODO: Only do this if I need to to improve performance
+			settingsWindow->draw(*settingsBackgroundSprite);
 			settingsWindow->display();
 		}
         while (const std::optional event = window.pollEvent()) {
@@ -335,7 +345,8 @@ int main() {
 								break;
 							case BTN_SETTINGS:
 								if (!settingsWindow || !settingsWindow->isOpen()) {
-									settingsWindow = new sf::RenderWindow(sf::VideoMode({200, 200}), "Lofi Buddy Settings");
+									settingsWindow = new sf::RenderWindow(sf::VideoMode({settingsWidth, settingsHeight}), "Lofi Buddy Settings", sf::Style::None);
+									settingsWindow->setPosition(sf::Vector2i{settingsX, settingsY});
 									menuOpen = false;
 								}
 								break;
