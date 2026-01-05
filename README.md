@@ -19,6 +19,7 @@ Desktop buddy pixel art lofi girl music player.
         - [X] Quit
         - [ ] Settings
             - [ ] Writes to .config or equivalent
+            - [ ] Submit and close buttons
             - [ ] Entries
                 - [ ] Playlist directory location
                 - [ ] Window size

@@ -4,11 +4,33 @@
 #include <vector>
 #include <future>
 #include "../lib/portable-file-dialogs.h"
+#include "../include/GraphicsManager.h"
 
 // Taken from https://github.com/texus/TransparentWindows/blob/master/Transparent.cpp
 
 #ifdef SFML_SYSTEM_WINDOWS
 #include <windows.h>
+#include <shlwapi.h>  
+#include <filesystem>
+ 
+// Link against Shlwapi.lib (Windows only)  
+#pragma comment(lib, "shlwapi.lib")  
+
+// https://www.codegenes.net/blog/how-do-i-get-the-directory-that-a-program-is-running-from/#what-is-the-running-directory
+
+std::string get_executable_dir() {  
+    char buffer[MAX_PATH]; // MAX_PATH is 260 (Windows path limit)  
+    DWORD length = GetModuleFileNameA(NULL, buffer, MAX_PATH);  
+ 
+    if (length == 0 || length == MAX_PATH) {  
+        throw std::runtime_error("GetModuleFileNameA failed or path truncated");  
+    }  
+ 
+    // Strip the filename to get the directory  
+    PathRemoveFileSpecA(buffer);  
+ 
+    return std::string(buffer);  
+}
 
 void bringWindowToTop(sf::Window& w) {
 	HWND hWnd = w.getNativeHandle();
@@ -62,6 +84,20 @@ bool setShape(sf::Window& w, const sf::Image& image) {
 #include <X11/Xlib.h>
 #include <X11/extensions/shape.h>
 #include <X11/Xatom.h>
+#include <unistd.h>  
+#include <limits.h>  
+ 
+std::string get_executable_dir() {  
+    char buffer[PATH_MAX];  
+    ssize_t length = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);  
+ 
+    if (length == -1) {  
+        throw std::runtime_error("readlink failed");  
+    }  
+ 
+    buffer[length] = '\0';  
+    return std::filesystem::path(buffer).parent_path().string();  
+}
 
 void bringWindowToTop(sf::Window& w) {
 	Window wnd = w.getNativeHandle();
@@ -69,9 +105,9 @@ void bringWindowToTop(sf::Window& w) {
 	
 	// Multiple atoms for persistent window behavior
     Atom stateAtom = XInternAtom(display, "_NET_WM_STATE", 1);
-    Atom stickyAtom = XInternAtom(display, "_NET_WM_STATE_STICKY", 1);
+    //Atom stickyAtom = XInternAtom(display, "_NET_WM_STATE_STICKY", 1);
     Atom alwaysOnTopAtom = XInternAtom(display, "_NET_WM_STATE_ABOVE", 1);
-    Atom keepAboveAtom = XInternAtom(display, "_NET_WM_STATE_KEEP_ABOVE", 1);
+    //Atom keepAboveAtom = XInternAtom(display, "_NET_WM_STATE_KEEP_ABOVE", 1);
 
     // Prepare client message
     XClientMessageEvent event;
@@ -163,29 +199,9 @@ bool setShape(sf::Window& w, const sf::Image& image) {
 }
 #endif
 
-
-class GraphicsManager {
-public:
-    static sf::Texture* getTexture(const std::string& path) {
-        static std::map<std::string, sf::Texture*> textureCache;
-        auto texture = textureCache[path];
-		if (!texture)
-			texture = new sf::Texture();
-        if (!texture->loadFromFile(path))
-			return NULL;
-        return texture;
-    }
-
-    static sf::Sprite* createSprite(const std::string& path, float x, float y, int width = 0, int height = 0) {
-        sf::Sprite* sprite = new sf::Sprite(*getTexture(path));
-		if (sprite == NULL)
-			return NULL;
-        sprite->setPosition(sf::Vector2f{x, y});
-		if (width > 0 && height > 0)
-			sprite->setTextureRect(sf::IntRect(sf::Vector2i{0, 0}, sf::Vector2i{width, height}));
-        return sprite;
-    }
-};
+std::string asset(std::string fileName) {
+	return get_executable_dir() + "/" + fileName;
+}
 
 int main() {
 	// Menu buttons
@@ -225,31 +241,31 @@ int main() {
 
 	// Font init
 	sf::Font font;
-	if (!font.openFromFile("BoldPixels.otf"))
+	if (!font.openFromFile(asset("BoldPixels.otf")))
 		return -1;
 
 	// Head and desk textures
 	float headX = winWidth - headWidth;
 	float headY = winHeight - headHeight - deskHeight - headVMargin;
-	auto headSprite = GraphicsManager::createSprite("head.png", headX, headY);
+	auto headSprite = GraphicsManager::createSprite(asset("head.png"), headX, headY);
 	if (!headSprite)
 		return -1;
 	float deskX = winWidth - deskWidth;
 	float deskY = winHeight - deskHeight;
-	auto deskSprite = GraphicsManager::createSprite("test.jpg", deskX, deskY);
+	auto deskSprite = GraphicsManager::createSprite(asset("test.jpg"), deskX, deskY);
 	if (!deskSprite)
 		return -1;
 
-	auto menuSprite = GraphicsManager::createSprite("menu.png", winWidth - menuWidth, 0, menuWidth, menuHeight);
+	auto menuSprite = GraphicsManager::createSprite(asset("menu.png"), winWidth - menuWidth, 0, menuWidth, menuHeight);
 	if (!menuSprite)
 		return -1;
 	// Menu entry buttons
 	std::vector<sf::Sprite*> menuButtonSprites;
 	std::vector<sf::Text*> menuButtonLabels;
-	for (int i = 0; i < menuButtonCount; i++) {
+	for (unsigned int i = 0; i < menuButtonCount; i++) {
 		float mbX = winWidth - menuButtonWidth - menuPadding;
 		float mbY = (i * (menuButtonHeight + menuButtonVMargin)) + menuPadding;
-		auto s = GraphicsManager::createSprite("menu-button.png", mbX, mbY);
+		auto s = GraphicsManager::createSprite(asset("menu-button.png"), mbX, mbY);
 		if (!s)
 			return -1;
 		menuButtonSprites.push_back(s);
@@ -276,7 +292,7 @@ int main() {
 	}
 
 	// Settings menu sprites
-	auto settingsBackgroundSprite = GraphicsManager::createSprite("menu.png", 0, 0);
+	auto settingsBackgroundSprite = GraphicsManager::createSprite(asset("menu.png"), 0, 0);
 	if (!settingsBackgroundSprite)
 		return -1;
 
@@ -286,7 +302,7 @@ int main() {
 	sprites.push_back(headSprite);
 
 	// Initialise default music track
-	std::vector<std::string> tracks = { "test.mp3" };
+	std::vector<std::string> tracks = { asset("test.mp3") };
 	unsigned int trackIndex = 0;
 	sf::Music music;
 	if (!music.openFromFile(tracks[trackIndex]))
@@ -330,7 +346,7 @@ int main() {
 				}
 				// Check menu button sprites
 				else if (mousePressed->button == sf::Mouse::Button::Left) {
-					for (int i = 0; i < menuButtonSprites.size(); i++) {
+					for (unsigned int i = 0; i < menuButtonSprites.size(); i++) {
 						auto mbs = menuButtonSprites[i];
 						if (!mbs->getGlobalBounds().contains(mousePosVector))
 							continue;
