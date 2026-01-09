@@ -10,6 +10,7 @@ public:
 	void draw(sf::RenderWindow* window);
 	void draw(sf::RenderTexture* rt);
 	void setText(std::string text, sf::Font* font);
+	void setTextOffset(int x, int y = 0);
 private:
 	sf::Sprite* _sprite = NULL;
 	sf::Text* _text = NULL;

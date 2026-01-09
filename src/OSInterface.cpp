@@ -11,6 +11,8 @@ std::string OSInterface::asset(std::string fileName) {
  
 // Link against Shlwapi.lib (Windows only)  
 #pragma comment(lib, "shlwapi.lib")  
+
+void OSInterface::cleanupWindow(sf::Window* window) {}
  
 std::string OSInterface::getExecutableDir() {  
     char buffer[MAX_PATH]; // MAX_PATH is 260 (Windows path limit)  
@@ -26,8 +28,10 @@ std::string OSInterface::getExecutableDir() {
     return std::string(buffer);  
 }
 
-void OSInterface::bringWindowToTop(sf::Window& w) {
-	HWND hWnd = w.getNativeHandle();
+void OSInterface::bringWindowToTop(sf::Window* w) {
+	if (w->isOpen())
+		return;
+	HWND hWnd = w->getNativeHandle();
 	BringWindowToTop(hWnd);
 }
 
@@ -81,6 +85,16 @@ bool OSInterface::setTransparency(sf::Window* w, const sf::Image& image) {
 #include <unistd.h>  
 #include <limits.h>  
  
+void OSInterface::cleanupWindow(sf::Window* window) {
+	static Display* display = XOpenDisplay(NULL);
+	Window wnd = window->getNativeHandle();
+    XSetWindowAttributes attributes;
+    attributes.override_redirect = False;
+    XChangeWindowAttributes(display, wnd, CWOverrideRedirect, &attributes);
+	XFlush(display);
+	XCloseDisplay(display);
+}
+
 std::string OSInterface::getExecutableDir() {  
     char buffer[PATH_MAX];  
     ssize_t length = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);  
@@ -94,8 +108,10 @@ std::string OSInterface::getExecutableDir() {
 }
 
 void OSInterface::bringWindowToTop(sf::Window* w) {
+	if (w->isOpen())
+		return;
 	Window wnd = w->getNativeHandle();
-	Display* display = XOpenDisplay(NULL);
+	static Display* display = XOpenDisplay(NULL);
 	
 	// Multiple atoms for persistent window behavior
     Atom stateAtom = XInternAtom(display, "_NET_WM_STATE", 1);
@@ -125,7 +141,6 @@ void OSInterface::bringWindowToTop(sf::Window* w) {
     XChangeWindowAttributes(display, wnd, CWOverrideRedirect, &attributes);
 
     XFlush(display);
-    XCloseDisplay(display);
 }
 
 #undef None
@@ -133,7 +148,7 @@ void OSInterface::bringWindowToTop(sf::Window* w) {
 
 bool OSInterface::setTransparency(sf::Window* w, const sf::Image& image) {
 	Window wnd = w->getNativeHandle();
-	Display* display = XOpenDisplay(NULL);
+	static Display* display = XOpenDisplay(NULL);
 
 	// Setting the window shape requires the XShape extension
 	int event_base;
@@ -188,7 +203,6 @@ bool OSInterface::setTransparency(sf::Window* w, const sf::Image& image) {
 	XFreeGC(display, gc);
 	XFreePixmap(display, pixmap);
 	XFlush(display);
-	XCloseDisplay(display);
 	return true;
 }
 #endif

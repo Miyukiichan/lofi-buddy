@@ -8,10 +8,7 @@ sf::Texture* GraphicsManager::getTexture(std::string path) {
 	auto texture = textureCache[path];
 	if (!texture)
 		texture = new sf::Texture();
-	//printf(path.c_str());
 	assert(texture->loadFromFile(path));
-	//if (!texture->loadFromFile(path))
-		//return NULL;
 	return texture;
 }
 

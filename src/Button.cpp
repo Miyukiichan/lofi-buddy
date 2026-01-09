@@ -34,3 +34,9 @@ void Button::setText(std::string text, sf::Font* font) {
 	_text->setFillColor(sf::Color::Black);
 	_text->setPosition(sf::Vector2f{ _x + 3, _y });
 }
+
+void Button::setTextOffset(int x, int y) {
+	assert(_text);
+	_text->setPosition(sf::Vector2f{ _x + x, _y + y });
+}
+

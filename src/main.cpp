@@ -86,9 +86,14 @@ int main() {
 		b->setText(t, font);
 	}
 
-	// Settings menu sprites
+	// Settings menu sprites and buttons
 	auto settingsBackgroundSprite = GraphicsManager::createSprite("menu.png", 0, 0);
 	assert(settingsBackgroundSprite);
+
+	unsigned int closeButtonMargin = 6;
+	auto settingsCloseButton = new Button("menu-button.png", settingsWidth - menuButtonHeight - closeButtonMargin, closeButtonMargin, menuButtonHeight, menuButtonHeight);
+	settingsCloseButton->setText("X", font);
+	settingsCloseButton->setTextOffset(10, -1);
 
 	// Collect main sprites and buttons that are always visible
 	std::vector<sf::Sprite*> sprites;
@@ -116,15 +121,31 @@ int main() {
     while (window->isOpen()) {
 		if (settingsWindow && settingsWindow->isOpen()) {
 			// check all the window's events that were triggered since the last iteration of the loop
-			while (const std::optional event = settingsWindow->pollEvent()) {
+			while (auto event = settingsWindow->pollEvent()) {
+				if (event->is<sf::Event::Closed>()) {
+					settingsWindow->close();
+					OSInterface::cleanupWindow(settingsWindow);
+					break;
+				}
+				if (auto mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
+					if (settingsCloseButton->pressed(mousePressed, settingsWindow))
+						settingsWindow->close();
+				}
 			}
 			OSInterface::bringWindowToTop(settingsWindow); // TODO: Only do this if I need to to improve performance
 			settingsWindow->draw(*settingsBackgroundSprite);
+			settingsCloseButton->draw(settingsWindow);
 			settingsWindow->display();
 		}
-        while (const std::optional event = window->pollEvent()) {
+        while (auto event = window->pollEvent()) {
+			bool settingsOpen = settingsWindow && settingsWindow->isOpen();
+			if (event->is<sf::Event::Closed>()) {
+				window->close();
+				OSInterface::cleanupWindow(window);
+				break;
+			}
 			// Emulate a modal dialog where we cannot interact with the main program
-			if (openFileOpen || (settingsWindow && settingsWindow->isOpen()))
+			if (openFileOpen || settingsOpen)
 				continue;
 			if (auto mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
 				if (headButton->pressed(mousePressed, window)) {
@@ -175,7 +196,7 @@ int main() {
 				trackIndex = 0;
 				auto track = tracks[trackIndex];
 				if (!music.openFromFile(track))
-					auto m = pfd::message("Error", "Error playing track: " + track).result();
+					pfd::message("Error", "Error playing track: " + track).result();
 				music.play();
 			}
 			openFileOpen = false;
@@ -188,7 +209,7 @@ int main() {
 				trackIndex = 0;
 			auto track = tracks[trackIndex];
 			if (!music.openFromFile(track))
-				auto m = pfd::message("Error", "Error playing track: " + track).result();
+				pfd::message("Error", "Error playing track: " + track).result();
 			music.play();
 		}
 
