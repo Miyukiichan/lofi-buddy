@@ -9,7 +9,7 @@ public:
 	bool pressed(const sf::Event::MouseButtonPressed* mouseButtonPressed, sf::Window* window);
 	void draw(sf::RenderWindow* window);
 	void draw(sf::RenderTexture* rt);
-	void setText(std::string text, sf::Font font);
+	void setText(std::string text, sf::Font* font);
 private:
 	sf::Sprite* _sprite = NULL;
 	sf::Text* _text = NULL;

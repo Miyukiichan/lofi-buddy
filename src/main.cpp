@@ -45,36 +45,30 @@ int main() {
 	window->setFramerateLimit(30);
 
 	// Font init
-	sf::Font font;
-	if (!font.openFromFile(OSInterface::asset("BoldPixels.otf")))
+	auto font = new sf::Font();
+	if (!font->openFromFile(OSInterface::asset("BoldPixels.otf")))
 		return -1;
 
-	// Head and desk textures
+	// Main Textures and Buttons
 	float headX = winWidth - headWidth;
 	float headY = winHeight - headHeight - deskHeight - headVMargin;
 	auto headButton = new Button("head.png", headX, headY);
-	// auto headSprite = GraphicsManager::createSprite("head.png", headX, headY);
-	// if (!headSprite)
-	// 	return -1;
+
 	float deskX = winWidth - deskWidth;
 	float deskY = winHeight - deskHeight;
 	auto deskSprite = GraphicsManager::createSprite("test.jpg", deskX, deskY);
-	if (!deskSprite)
-		return -1;
+	assert(deskSprite);
 
 	auto menuSprite = GraphicsManager::createSprite("menu.png", winWidth - menuWidth, 0, menuWidth, menuHeight);
-	if (!menuSprite)
-		return -1;
+	assert(menuSprite);
+
 	// Menu entry buttons
-	std::vector<sf::Sprite*> menuButtonSprites;
-	std::vector<sf::Text*> menuButtonLabels;
+	std::vector<Button*> menuButtons;
 	for (unsigned int i = 0; i < menuButtonCount; i++) {
 		float mbX = winWidth - menuButtonWidth - menuPadding;
 		float mbY = (i * (menuButtonHeight + menuButtonVMargin)) + menuPadding;
-		auto s = GraphicsManager::createSprite("menu-button.png", mbX, mbY);
-		if (!s)
-			return -1;
-		menuButtonSprites.push_back(s);
+		auto b = new Button("menu-button.png", mbX, mbY);
+		menuButtons.push_back(b);
 
 		// Labels
 		std::string t = "";
@@ -89,24 +83,17 @@ int main() {
 				t = "Quit";
 				break;
 		}
-		sf::Text* l = new sf::Text(font);
-		l->setString(t);
-		l->setCharacterSize(24);
-		l->setFillColor(sf::Color::Black);
-		l->setPosition(sf::Vector2f{ mbX + 3, mbY });
-		menuButtonLabels.push_back(l);
+		b->setText(t, font);
 	}
 
 	// Settings menu sprites
 	auto settingsBackgroundSprite = GraphicsManager::createSprite("menu.png", 0, 0);
-	if (!settingsBackgroundSprite)
-		return -1;
+	assert(settingsBackgroundSprite);
 
-	// Collect main sprites that are always visible
+	// Collect main sprites and buttons that are always visible
 	std::vector<sf::Sprite*> sprites;
 	sprites.push_back(deskSprite);
 
-	// Collect main sprites that are always visible
 	std::vector<Button*> buttons;
 	buttons.push_back(headButton);
 
@@ -140,8 +127,6 @@ int main() {
 			if (openFileOpen || (settingsWindow && settingsWindow->isOpen()))
 				continue;
 			if (auto mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
-				auto mousePos = sf::Mouse::getPosition(*window);
-				auto mousePosVector = sf::Vector2f{static_cast<float>(mousePos.x), static_cast<float>(mousePos.y)};
 				if (headButton->pressed(mousePressed, window)) {
 					menuOpen = !menuOpen;
 					// else if (mousePressed->button == sf::Mouse::Button::Left) {
@@ -152,10 +137,10 @@ int main() {
 					// }
 				}
 				// Check menu button sprites
-				else if (mousePressed->button == sf::Mouse::Button::Left) {
-					for (unsigned int i = 0; i < menuButtonSprites.size(); i++) {
-						auto mbs = menuButtonSprites[i];
-						if (!mbs->getGlobalBounds().contains(mousePosVector))
+				else if (menuOpen && mousePressed->button == sf::Mouse::Button::Left) {
+					for (unsigned int i = 0; i < menuButtons.size(); i++) {
+						auto mb = menuButtons[i];
+						if (!mb->pressed(mousePressed, window))
 							continue;
 						switch(i) {
 							case BTN_PLAYLIST:
@@ -218,7 +203,7 @@ int main() {
 		for (const auto button : buttons)
 			button->draw(rt);
 		// Just include the outer menu background
-		if (menuOpen)
+		if (menuOpen) 
 			rt->draw(*menuSprite);
 		rt->display();
 		sf::Image mask = rt->getTexture().copyToImage();
@@ -232,10 +217,8 @@ int main() {
 			button->draw(window);
 		if (menuOpen) {
 			window->draw(*menuSprite);
-			for (auto s : menuButtonSprites)
-				window->draw(*s);
-			for (auto l : menuButtonLabels)
-				window->draw(*l);
+			for (auto b : menuButtons)
+				b->draw(window);
 		}
 		window->display();
     }

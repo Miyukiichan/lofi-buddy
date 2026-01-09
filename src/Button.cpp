@@ -27,8 +27,8 @@ void Button::draw(sf::RenderTexture* rt) {
 	rt->draw(*_sprite);
 }
 
-void Button::setText(std::string text, sf::Font font) {
-	_text = new sf::Text(font);
+void Button::setText(std::string text, sf::Font* font) {
+	_text = new sf::Text(*font);
 	_text->setString(text);
 	_text->setCharacterSize(24);
 	_text->setFillColor(sf::Color::Black);
