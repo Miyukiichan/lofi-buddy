@@ -108,10 +108,10 @@ std::string OSInterface::getExecutableDir() {
 }
 
 void OSInterface::bringWindowToTop(sf::Window* w) {
-	if (w->isOpen())
-		return;
+	// if (w->isOpen())
+	// 	return;
 	Window wnd = w->getNativeHandle();
-	static Display* display = XOpenDisplay(NULL);
+	Display* display = XOpenDisplay(NULL);
 	
 	// Multiple atoms for persistent window behavior
     Atom stateAtom = XInternAtom(display, "_NET_WM_STATE", 1);
@@ -141,6 +141,7 @@ void OSInterface::bringWindowToTop(sf::Window* w) {
     XChangeWindowAttributes(display, wnd, CWOverrideRedirect, &attributes);
 
     XFlush(display);
+	XCloseDisplay(display);
 }
 
 #undef None
@@ -148,7 +149,7 @@ void OSInterface::bringWindowToTop(sf::Window* w) {
 
 bool OSInterface::setTransparency(sf::Window* w, const sf::Image& image) {
 	Window wnd = w->getNativeHandle();
-	static Display* display = XOpenDisplay(NULL);
+	Display* display = XOpenDisplay(NULL);
 
 	// Setting the window shape requires the XShape extension
 	int event_base;
@@ -203,6 +204,7 @@ bool OSInterface::setTransparency(sf::Window* w, const sf::Image& image) {
 	XFreeGC(display, gc);
 	XFreePixmap(display, pixmap);
 	XFlush(display);
+	XCloseDisplay(display);
 	return true;
 }
 #endif

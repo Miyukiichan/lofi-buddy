@@ -95,6 +95,10 @@ int main() {
 	settingsCloseButton->setText("X", font);
 	settingsCloseButton->setTextOffset(10, -1);
 
+	auto settingsSaveButton = new Button("menu-button.png", (settingsWidth / 2) - (menuButtonWidth / 2), settingsHeight - menuButtonHeight - closeButtonMargin, menuButtonWidth, menuButtonHeight);
+	settingsSaveButton->setText("Save", font);
+	settingsSaveButton->setTextOffset(39);
+
 	// Collect main sprites and buttons that are always visible
 	std::vector<sf::Sprite*> sprites;
 	sprites.push_back(deskSprite);
@@ -130,11 +134,14 @@ int main() {
 				if (auto mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
 					if (settingsCloseButton->pressed(mousePressed, settingsWindow))
 						settingsWindow->close();
+					if (settingsSaveButton->pressed(mousePressed, settingsWindow))
+						settingsWindow->close();
 				}
 			}
 			OSInterface::bringWindowToTop(settingsWindow); // TODO: Only do this if I need to to improve performance
 			settingsWindow->draw(*settingsBackgroundSprite);
 			settingsCloseButton->draw(settingsWindow);
+			settingsSaveButton->draw(settingsWindow);
 			settingsWindow->display();
 		}
         while (auto event = window->pollEvent()) {

@@ -72,3 +72,4 @@ Desktop buddy pixel art lofi girl music player.
     - [ ] Trigger bringToTop only when window manager does something
 - [ ] Possible debug mode that can print information about the current song and state to the console every second
 - [X] Separate transparency and bringToTop code into related classes for each OS rather than using preprocessors
+- [ ] Fix X11 crash upon closing a window
