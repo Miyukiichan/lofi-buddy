@@ -52,10 +52,10 @@ Desktop buddy pixel art lofi girl music player.
     - [ ] Dialog
     - [ ] Ensure cross platform
     - [ ] Allow selecting folders or files
-- [ ] Button class
+- [X] Button class
     - [ ] Hover and pressed sprites
-    - [ ] Pressed state
-        - [ ] Check sprint bounds with mouse pos
+    - [X] Pressed state
+        - [X] Check sprint bounds with mouse pos
 - [ ] Text input control
     - [ ] https://stackoverflow.com/a/53765163
     - [X] Need font
@@ -71,4 +71,4 @@ Desktop buddy pixel art lofi girl music player.
     - [ ] Trigger transparency only when sprites change (animation)
     - [ ] Trigger bringToTop only when window manager does something
 - [ ] Possible debug mode that can print information about the current song and state to the console every second
-- [ ] Separate transparency and bringToTop code into related classes for each OS rather than using preprocessors
+- [X] Separate transparency and bringToTop code into related classes for each OS rather than using preprocessors

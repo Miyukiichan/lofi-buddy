@@ -6,10 +6,7 @@
 #include "../lib/portable-file-dialogs.h"
 #include "../include/GraphicsManager.h"
 #include "../include/OSInterface.h"
-
-std::string asset(std::string fileName) {
-	return OSInterface::get_executable_dir() + "/" + fileName;
-}
+#include "../include/Button.h"
 
 int main() {
 	// Menu buttons
@@ -43,28 +40,29 @@ int main() {
 	int settingsY = winY - settingsHeight + menuHeight;
 
 	// Window init
-	sf::RenderWindow window(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
-	window.setPosition(sf::Vector2i(winX, winY));
-	window.setFramerateLimit(30);
+	auto window = new sf::RenderWindow(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
+	window->setPosition(sf::Vector2i(winX, winY));
+	window->setFramerateLimit(30);
 
 	// Font init
 	sf::Font font;
-	if (!font.openFromFile(asset("BoldPixels.otf")))
+	if (!font.openFromFile(OSInterface::asset("BoldPixels.otf")))
 		return -1;
 
 	// Head and desk textures
 	float headX = winWidth - headWidth;
 	float headY = winHeight - headHeight - deskHeight - headVMargin;
-	auto headSprite = GraphicsManager::createSprite(asset("head.png"), headX, headY);
-	if (!headSprite)
-		return -1;
+	auto headButton = new Button("head.png", headX, headY);
+	// auto headSprite = GraphicsManager::createSprite("head.png", headX, headY);
+	// if (!headSprite)
+	// 	return -1;
 	float deskX = winWidth - deskWidth;
 	float deskY = winHeight - deskHeight;
-	auto deskSprite = GraphicsManager::createSprite(asset("test.jpg"), deskX, deskY);
+	auto deskSprite = GraphicsManager::createSprite("test.jpg", deskX, deskY);
 	if (!deskSprite)
 		return -1;
 
-	auto menuSprite = GraphicsManager::createSprite(asset("menu.png"), winWidth - menuWidth, 0, menuWidth, menuHeight);
+	auto menuSprite = GraphicsManager::createSprite("menu.png", winWidth - menuWidth, 0, menuWidth, menuHeight);
 	if (!menuSprite)
 		return -1;
 	// Menu entry buttons
@@ -73,7 +71,7 @@ int main() {
 	for (unsigned int i = 0; i < menuButtonCount; i++) {
 		float mbX = winWidth - menuButtonWidth - menuPadding;
 		float mbY = (i * (menuButtonHeight + menuButtonVMargin)) + menuPadding;
-		auto s = GraphicsManager::createSprite(asset("menu-button.png"), mbX, mbY);
+		auto s = GraphicsManager::createSprite("menu-button.png", mbX, mbY);
 		if (!s)
 			return -1;
 		menuButtonSprites.push_back(s);
@@ -100,17 +98,20 @@ int main() {
 	}
 
 	// Settings menu sprites
-	auto settingsBackgroundSprite = GraphicsManager::createSprite(asset("menu.png"), 0, 0);
+	auto settingsBackgroundSprite = GraphicsManager::createSprite("menu.png", 0, 0);
 	if (!settingsBackgroundSprite)
 		return -1;
 
 	// Collect main sprites that are always visible
 	std::vector<sf::Sprite*> sprites;
 	sprites.push_back(deskSprite);
-	sprites.push_back(headSprite);
+
+	// Collect main sprites that are always visible
+	std::vector<Button*> buttons;
+	buttons.push_back(headButton);
 
 	// Initialise default music track
-	std::vector<std::string> tracks = { asset("test.mp3") };
+	std::vector<std::string> tracks = { OSInterface::asset("test.mp3") };
 	unsigned int trackIndex = 0;
 	sf::Music music;
 	if (!music.openFromFile(tracks[trackIndex]))
@@ -125,32 +126,30 @@ int main() {
 	sf::RenderWindow* settingsWindow = NULL;
 
 	// Main loop
-    while (window.isOpen()) {
+    while (window->isOpen()) {
 		if (settingsWindow && settingsWindow->isOpen()) {
 			// check all the window's events that were triggered since the last iteration of the loop
 			while (const std::optional event = settingsWindow->pollEvent()) {
 			}
-			OSInterface::bringWindowToTop(*settingsWindow); // TODO: Only do this if I need to to improve performance
+			OSInterface::bringWindowToTop(settingsWindow); // TODO: Only do this if I need to to improve performance
 			settingsWindow->draw(*settingsBackgroundSprite);
 			settingsWindow->display();
 		}
-        while (const std::optional event = window.pollEvent()) {
+        while (const std::optional event = window->pollEvent()) {
 			// Emulate a modal dialog where we cannot interact with the main program
 			if (openFileOpen || (settingsWindow && settingsWindow->isOpen()))
 				continue;
-			if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
-				auto mousePos = sf::Mouse::getPosition(window);
+			if (auto mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
+				auto mousePos = sf::Mouse::getPosition(*window);
 				auto mousePosVector = sf::Vector2f{static_cast<float>(mousePos.x), static_cast<float>(mousePos.y)};
-				if (headSprite->getGlobalBounds().contains(mousePosVector)) {
-					if (mousePressed->button == sf::Mouse::Button::Right) {
-						menuOpen = !menuOpen;
-					}
-					else if (mousePressed->button == sf::Mouse::Button::Left) {
-						if (music.getStatus() == sf::SoundSource::Status::Paused) 
-							music.play();
-						else 
-							music.pause();
-					}
+				if (headButton->pressed(mousePressed, window)) {
+					menuOpen = !menuOpen;
+					// else if (mousePressed->button == sf::Mouse::Button::Left) {
+					// 	if (music.getStatus() == sf::SoundSource::Status::Paused) 
+					// 		music.play();
+					// 	else 
+					// 		music.pause();
+					// }
 				}
 				// Check menu button sprites
 				else if (mousePressed->button == sf::Mouse::Button::Left) {
@@ -175,7 +174,7 @@ int main() {
 								}
 								break;
 							case BTN_QUIT:
-								window.close();
+								window->close();
 								break;
 						}
 						break;
@@ -212,28 +211,32 @@ int main() {
 
 		// TODO: Only do this if the UI or animation changes to improve performance
 		// Set transparency for anything that is not a sprite
-		sf::RenderTexture rt({winWidth, winHeight});
-		rt.clear(sf::Color::Transparent);
+		auto rt = new sf::RenderTexture({winWidth, winHeight});
+		rt->clear(sf::Color::Transparent);
 		for (const auto sprite : sprites)
-			rt.draw(*sprite);
+			rt->draw(*sprite);
+		for (const auto button : buttons)
+			button->draw(rt);
 		// Just include the outer menu background
 		if (menuOpen)
-			rt.draw(*menuSprite);
-		rt.display();
-		sf::Image mask = rt.getTexture().copyToImage();
+			rt->draw(*menuSprite);
+		rt->display();
+		sf::Image mask = rt->getTexture().copyToImage();
 		OSInterface::setTransparency(window, mask);
 
 		// Drawing all the sprites
 		OSInterface::bringWindowToTop(window); // TODO: Only do this if I need to to improve performance
 		for (auto s : sprites)
-			window.draw(*s);
+			window->draw(*s);
+		for (auto button : buttons)
+			button->draw(window);
 		if (menuOpen) {
-			window.draw(*menuSprite);
+			window->draw(*menuSprite);
 			for (auto s : menuButtonSprites)
-				window.draw(*s);
+				window->draw(*s);
 			for (auto l : menuButtonLabels)
-				window.draw(*l);
+				window->draw(*l);
 		}
-		window.display();
+		window->display();
     }
 }

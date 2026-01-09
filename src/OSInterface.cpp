@@ -1,5 +1,9 @@
 #include "../include/OSInterface.h"
 
+std::string OSInterface::asset(std::string fileName) {
+	return OSInterface::getExecutableDir() + "/" + fileName;
+}
+
 #ifdef SFML_SYSTEM_WINDOWS
 #include <windows.h>
 #include <shlwapi.h>  
@@ -8,7 +12,7 @@
 // Link against Shlwapi.lib (Windows only)  
 #pragma comment(lib, "shlwapi.lib")  
  
-std::string OSInterface::get_executable_dir() {  
+std::string OSInterface::getExecutableDir() {  
     char buffer[MAX_PATH]; // MAX_PATH is 260 (Windows path limit)  
     DWORD length = GetModuleFileNameA(NULL, buffer, MAX_PATH);  
  
@@ -27,8 +31,8 @@ void OSInterface::bringWindowToTop(sf::Window& w) {
 	BringWindowToTop(hWnd);
 }
 
-bool OSInterface::setTransparency(sf::Window& w, const sf::Image& image) {
-	HWND hWnd = w.getNativeHandle();
+bool OSInterface::setTransparency(sf::Window* w, const sf::Image& image) {
+	HWND hWnd = w->getNativeHandle();
 	const sf::Uint8* pixelData = image.getPixelsPtr();
 
 	// Create a region with the size of the entire window
@@ -77,7 +81,7 @@ bool OSInterface::setTransparency(sf::Window& w, const sf::Image& image) {
 #include <unistd.h>  
 #include <limits.h>  
  
-std::string OSInterface::get_executable_dir() {  
+std::string OSInterface::getExecutableDir() {  
     char buffer[PATH_MAX];  
     ssize_t length = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);  
  
@@ -89,8 +93,8 @@ std::string OSInterface::get_executable_dir() {
     return std::filesystem::path(buffer).parent_path().string();  
 }
 
-void OSInterface::bringWindowToTop(sf::Window& w) {
-	Window wnd = w.getNativeHandle();
+void OSInterface::bringWindowToTop(sf::Window* w) {
+	Window wnd = w->getNativeHandle();
 	Display* display = XOpenDisplay(NULL);
 	
 	// Multiple atoms for persistent window behavior
@@ -127,8 +131,8 @@ void OSInterface::bringWindowToTop(sf::Window& w) {
 #undef None
 #undef Status
 
-bool OSInterface::setTransparency(sf::Window& w, const sf::Image& image) {
-	Window wnd = w.getNativeHandle();
+bool OSInterface::setTransparency(sf::Window* w, const sf::Image& image) {
+	Window wnd = w->getNativeHandle();
 	Display* display = XOpenDisplay(NULL);
 
 	// Setting the window shape requires the XShape extension
