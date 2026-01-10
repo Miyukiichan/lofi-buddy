@@ -3,12 +3,15 @@
 #include <stdio.h>
 #include <vector>
 #include <future>
-#include "../lib/portable-file-dialogs.h"
-#include "../include/GraphicsManager.h"
-#include "../include/OSInterface.h"
-#include "../include/Button.h"
+#include <portable-file-dialogs.h>
+#include <GraphicsManager.h>
+#include <OSInterface.h>
+#include <Button.h>
+#include <Settings.h>
 
 int main() {
+	auto settings = new Settings();
+	bool desktopBuddy = settings->getBool("desktop-buddy");
 	// Menu buttons
 	const unsigned int BTN_PLAYLIST = 0;
 	const unsigned int BTN_SETTINGS = 1;
@@ -40,7 +43,8 @@ int main() {
 	int settingsY = winY - settingsHeight + menuHeight;
 
 	// Window init
-	auto window = new sf::RenderWindow(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", sf::Style::None);
+	auto windowStyle = desktopBuddy ? sf::Style::None : sf::Style::Default;
+	auto window = new sf::RenderWindow(sf::VideoMode({winWidth, winHeight}), "Lofi Buddy", windowStyle);
 	window->setPosition(sf::Vector2i(winX, winY));
 	window->setFramerateLimit(30);
 
@@ -91,9 +95,12 @@ int main() {
 	assert(settingsBackgroundSprite);
 
 	unsigned int closeButtonMargin = 6;
-	auto settingsCloseButton = new Button("menu-button.png", settingsWidth - menuButtonHeight - closeButtonMargin, closeButtonMargin, menuButtonHeight, menuButtonHeight);
-	settingsCloseButton->setText("X", font);
-	settingsCloseButton->setTextOffset(10, -1);
+	Button* settingsCloseButton = NULL;
+	if (desktopBuddy) {
+		settingsCloseButton = new Button("menu-button.png", settingsWidth - menuButtonHeight - closeButtonMargin, closeButtonMargin, menuButtonHeight, menuButtonHeight);
+		settingsCloseButton->setText("X", font);
+		settingsCloseButton->setTextOffset(10, -1);
+	}
 
 	auto settingsSaveButton = new Button("menu-button.png", (settingsWidth / 2) - (menuButtonWidth / 2), settingsHeight - menuButtonHeight - closeButtonMargin, menuButtonWidth, menuButtonHeight);
 	settingsSaveButton->setText("Save", font);
@@ -132,15 +139,17 @@ int main() {
 					break;
 				}
 				if (auto mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
-					if (settingsCloseButton->pressed(mousePressed, settingsWindow))
+					if (desktopBuddy || settingsCloseButton->pressed(mousePressed, settingsWindow))
 						settingsWindow->close();
 					if (settingsSaveButton->pressed(mousePressed, settingsWindow))
 						settingsWindow->close();
 				}
 			}
-			OSInterface::bringWindowToTop(settingsWindow); // TODO: Only do this if I need to to improve performance
+			if (desktopBuddy)
+				OSInterface::bringWindowToTop(settingsWindow); // TODO: Only do this if I need to to improve performance
 			settingsWindow->draw(*settingsBackgroundSprite);
-			settingsCloseButton->draw(settingsWindow);
+			if (desktopBuddy)
+				settingsCloseButton->draw(settingsWindow);
 			settingsSaveButton->draw(settingsWindow);
 			settingsWindow->display();
 		}
@@ -181,7 +190,7 @@ int main() {
 								break;
 							case BTN_SETTINGS:
 								if (!settingsWindow || !settingsWindow->isOpen()) {
-									settingsWindow = new sf::RenderWindow(sf::VideoMode({settingsWidth, settingsHeight}), "Lofi Buddy Settings", sf::Style::None);
+									settingsWindow = new sf::RenderWindow(sf::VideoMode({settingsWidth, settingsHeight}), "Lofi Buddy Settings", windowStyle);
 									settingsWindow->setPosition(sf::Vector2i{settingsX, settingsY});
 									menuOpen = false;
 								}
@@ -238,7 +247,8 @@ int main() {
 		OSInterface::setTransparency(window, mask);
 
 		// Drawing all the sprites
-		OSInterface::bringWindowToTop(window); // TODO: Only do this if I need to to improve performance
+		if (desktopBuddy)
+			OSInterface::bringWindowToTop(window); // TODO: Only do this if I need to to improve performance
 		for (auto s : sprites)
 			window->draw(*s);
 		for (auto button : buttons)

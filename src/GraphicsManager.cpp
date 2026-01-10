@@ -1,5 +1,5 @@
-#include "../include/GraphicsManager.h"
-#include "../include/OSInterface.h"
+#include <GraphicsManager.h>
+#include <OSInterface.h>
 #include <stdio.h>
 
 sf::Texture* GraphicsManager::getTexture(std::string path) {

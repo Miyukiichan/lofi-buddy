@@ -7,6 +7,7 @@ class OSInterface {
 public:
 	static std::string asset(std::string fileName);
 	static std::string getExecutableDir();
+	static std::string getConfigPath();
 	static void bringWindowToTop(sf::Window* w);
 	static void cleanupWindow(sf::Window* w);
 	static bool setTransparency(sf::Window* w, const sf::Image& image);

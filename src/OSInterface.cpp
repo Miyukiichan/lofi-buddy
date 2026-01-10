@@ -1,7 +1,41 @@
-#include "../include/OSInterface.h"
+#include <OSInterface.h>
+#include <filesystem>
+#include <cstdlib>
 
 std::string OSInterface::asset(std::string fileName) {
 	return OSInterface::getExecutableDir() + "/" + fileName;
+}
+
+
+std::string OSInterface::getConfigPath() {
+	const char* homeDir = 
+        #if defined(SFML_SYSTEM_WINDOWS)
+            std::getenv("USERPROFILE")
+        #else
+            std::getenv("HOME")
+        #endif
+    ;
+
+    if (!homeDir) {
+        throw std::runtime_error("Could not determine home directory");
+    }
+
+	std::string appName = "lofi-buddy";
+    #if defined(SFML_SYSTEM_WINDOWS)
+        std::filesystem::path configPath = 
+            std::filesystem::path(homeDir) / "AppData" / "Roaming" / appName;
+    #elif defined(SFML_SYSTEM_MACOS)
+        std::filesystem::path configPath = 
+            std::filesystem::path(homeDir) / "Library" / "Application Support" / appName;
+    #elif defined(SFML_SYSTEM_LINUX)
+        std::filesystem::path configPath = 
+            std::filesystem::path(homeDir) / ".config" / appName;
+    #else
+        #error Unsupported platform
+    #endif
+
+    std::filesystem::create_directories(configPath);
+    return configPath;	
 }
 
 #ifdef SFML_SYSTEM_WINDOWS

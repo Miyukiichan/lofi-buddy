@@ -13,16 +13,19 @@ Desktop buddy pixel art lofi girl music player.
         - [ ] Can import m3u8 files
 - [ ] Menu system
     - [X] Click on girl's head, she looks up and sees the menu items above her head
-        - Basically done beside the art and animation
+        - [ ] Basically done beside the art and animation
     - [X] Background
     - Entries
         - [X] Quit
         - [ ] Settings
             - [ ] Writes to .config or equivalent
-            - [ ] Submit and close buttons
+                - [ ] Toml format rather than json to be more readable
+            - [X] Submit and close buttons
             - [ ] Entries
                 - [ ] Playlist directory location
+                    - [ ] Is this necessary - can just put it in config location
                 - [ ] Window size
+                    - [ ] Again, not sure if this is really needed - need to test on different resolution monitors
                 - [ ] Enable desktop buddy system (ie just render as a normal window)
                     - [ ] Need to have a sprite or colour for the non-transparent background
         - [ ] Playlist manager

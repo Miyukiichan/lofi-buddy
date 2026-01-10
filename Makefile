@@ -22,7 +22,7 @@ all: $(TARGET)
 
 # Build executable
 $(TARGET): $(SRC)/*.cpp
-	$(CXX) $(CXX_FLAGS) -I$(INCLUDE) -L$(LIB) $(LDFLAGS) $^ -o $@ $(LIBRARIES)  
+	$(CXX) $(CXX_FLAGS) -I$(INCLUDE) -I$(LIB) -L$(LIB) $(LDFLAGS) $^ -o $@ $(LIBRARIES)  
 	cp $(ASSETS)/* $(BIN)
 
 linux:

@@ -1,5 +1,5 @@
-#include "../include/Button.h"
-#include "../include/GraphicsManager.h"
+#include <Button.h>
+#include <GraphicsManager.h>
 
 Button::Button(std::string path, float x, float y, int width, int height) {
 	_sprite = GraphicsManager::createSprite(path, x, y, width, height);
